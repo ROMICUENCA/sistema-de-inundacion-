@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control de Nivel de Agua y Clima</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <link rel="stylesheet" href="estilo.css" />
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="topbar">
+      <div class="indicador-esp" id="indicadorEsp">
+        <span class="punto-estado"></span>
+        <span id="textoIndicadorEsp">ESP32 no conectado a la web</span>
+      </div>
+      <button class="btn-actualizar" onclick="abrirModal()">actualizar secto</button>
+    </header>
+
+    <section class="seccion-bloque">
+      <p class="seccion-titulo">Monitoreo de Nivel de Agua</p>
+      <main class="sectores-fila">
+        <div class="sector-card" id="card-1">
+          <div class="sector-info">
+            <span class="sector-tag">Canal 01</span>
+            <span class="sector-nombre" id="nombre-1">Sector 1</span>
+          </div>
+          <span class="estado-pill estado-normal" id="estado-1">estado normal</span>
+        </div>
+
+        <div class="sector-card" id="card-2">
+          <div class="sector-info">
+            <span class="sector-tag">Canal 02</span>
+            <span class="sector-nombre" id="nombre-2">Sector 2</span>
+          </div>
+          <span class="estado-pill estado-normal" id="estado-2">estado normal</span>
+        </div>
+
+        <div class="sector-card" id="card-3">
+          <div class="sector-info">
+            <span class="sector-tag">Canal 03</span>
+            <span class="sector-nombre" id="nombre-3">Sector 3</span>
+          </div>
+          <span class="estado-pill estado-normal" id="estado-3">estado normal</span>
+        </div>
+      </main>
+    </section>
+
+    <section class="seccion-bloque">
+      <div class="seccion-header-row">
+        <p class="seccion-titulo">Telemetría y Agenda de Nivel de Agua</p>
+        <div class="acciones-grupo">
+          <button type="button" class="btn-secundario-sm" onclick="reiniciarGraficasYContadores()">Reiniciar contadores</button>
+          <button type="button" class="btn-secundario-sm" onclick="limpiarAgenda()">Limpiar agenda</button>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="resumen-kpi-grid">
+          <div class="kpi-box flood">
+            <span class="kpi-label">Mayor tiempo inundado</span>
+            <span class="kpi-valor" id="mayorInundadoNombre">Ninguno inundado</span>
+            <span class="kpi-sub" id="mayorInundadoDetalle">0s acumulados</span>
+          </div>
+          <div class="kpi-box dry">
+            <span class="kpi-label">Mayor tiempo seco</span>
+            <span class="kpi-valor" id="mayorSecoNombre">Sin registro aún</span>
+            <span class="kpi-sub" id="mayorSecoDetalle">0s acumulados</span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Contabilidad acumulada</span>
+            <span class="kpi-valor" id="totalEventosTexto">0 eventos</span>
+            <span class="kpi-sub" id="resumenTiemposAgua">S1: 0s · S2: 0s · S3: 0s inund.</span>
+          </div>
+        </div>
+
+        <div class="chart-shell">
+          <div class="chart-legend-bar">
+            <div class="legend-items">
+              <span class="legend-pill">
+                <span class="legend-dot" style="background: #2563eb;"></span>
+                <span id="leyenda-s1">Sector 1</span>
+              </span>
+              <span class="legend-pill">
+                <span class="legend-dot" style="background: #16a34a;"></span>
+                <span id="leyenda-s2">Sector 2</span>
+              </span>
+              <span class="legend-pill">
+                <span class="legend-dot" style="background: #ea580c;"></span>
+                <span id="leyenda-s3">Sector 3</span>
+              </span>
+            </div>
+            <span class="chart-hint">Duración continua del evento (vuelve a 0s al secarse)</span>
+          </div>
+
+          <div class="canvas-container">
+            <canvas id="graficaAguaPro" class="pro-chart"></canvas>
+            <div id="tooltipAgua" class="chart-tooltip"></div>
+          </div>
+        </div>
+
+        <div class="agenda-wrapper">
+          <div class="agenda-header">
+            <span class="agenda-title">Agenda / Rúbrica de Eventos de Inundación</span>
+            <span class="chart-hint" id="contadorAgenda">0 registros guardados</span>
+          </div>
+          <div class="agenda-scroll">
+            <table class="agenda-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Sector</th>
+                  <th>Inicio alerta</th>
+                  <th>Fin / Secado</th>
+                  <th>Duración inundado</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="agendaBody">
+                <tr>
+                  <td colspan="6" class="agenda-vacia">Sin eventos de inundación registrados aún.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion-bloque">
+      <p class="seccion-titulo">Condición Climática</p>
+      <div class="panel-card">
+        <div class="panel-top">
+          <div>
+            <h2 class="panel-titulo">Sensor de lluvia</h2>
+            <div class="panel-sub">Detección de precipitación y humedad en placa en tiempo real</div>
+          </div>
+          <div class="lluvia-metricas">
+            <span class="lluvia-estado" id="climaTexto">SECO</span>
+            <span class="lluvia-pct"><span id="climaPct">0</span>%</span>
+          </div>
+        </div>
+
+        <div class="barra-fondo">
+          <div class="barra-relleno" id="rainBar"></div>
+        </div>
+
+        <div class="lluvia-pie">
+          <span>Nivel de humedad en placa</span>
+          <span id="rawInfo">AO: --</span>
+        </div>
+
+        <div class="chart-shell">
+          <div class="chart-legend-bar">
+            <div class="legend-items">
+              <span class="legend-pill">
+                <span class="legend-dot" style="background: #0284c7;"></span>
+                <span>Intensidad de lluvia (%)</span>
+              </span>
+              <span class="legend-pill">
+                <span class="legend-dot" style="background: #64748b;"></span>
+                <span>SECO</span>
+              </span>
+              <span class="legend-pill">
+                <span class="legend-dot" style="background: #eab308;"></span>
+                <span>LLOVIZNA</span>
+              </span>
+              <span class="legend-pill">
+                <span class="legend-dot" style="background: #1d4ed8;"></span>
+                <span>LLUVIA FUERTE</span>
+              </span>
+            </div>
+            <span class="chart-hint" id="climaPredominante">Condición predominante: Sin registro</span>
+          </div>
+
+          <div class="canvas-container">
+            <canvas id="graficaLluviaPro" class="pro-chart"></canvas>
+            <div id="tooltipLluvia" class="chart-tooltip"></div>
+          </div>
+        </div>
+
+        <div class="clima-desglose">
+          <div class="clima-stat-item">
+            <span class="clima-stat-nombre">TIEMPO EN SECO</span>
+            <span class="clima-stat-dato" id="datoClimaSeco">0% (0s)</span>
+          </div>
+          <div class="clima-stat-item">
+            <span class="clima-stat-nombre">TIEMPO EN LLOVIZNA</span>
+            <span class="clima-stat-dato" id="datoClimaLlovizna">0% (0s)</span>
+          </div>
+          <div class="clima-stat-item">
+            <span class="clima-stat-nombre">TIEMPO EN LLUVIA FUERTE</span>
+            <span class="clima-stat-dato" id="datoClimaFuerte">0% (0s)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="modalNombres" onclick="cerrarPorFondo(event)">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-titulo" id="modalTitulo">Nombre de cada sector</h2>
+          <p class="modal-desc">Configura los identificadores visibles de tus tres zonas de monitoreo.</p>
+        </div>
+        <button type="button" class="btn-cerrar-x" onclick="cerrarModal()" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="campo">
+          <label for="input-1">Etiqueta del Sector 1</label>
+          <div class="input-grupo">
+            <span class="input-prefijo">CH-01</span>
+            <input type="text" id="input-1" maxlength="32" placeholder="Ej. Patio Principal" />
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="input-2">Etiqueta del Sector 2</label>
+          <div class="input-grupo">
+            <span class="input-prefijo">CH-02</span>
+            <input type="text" id="input-2" maxlength="32" placeholder="Ej. Canal Lateral" />
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="input-3">Etiqueta del Sector 3</label>
+          <div class="input-grupo">
+            <span class="input-prefijo">CH-03</span>
+            <input type="text" id="input-3" maxlength="32" placeholder="Ej. Cisterna / Garaje" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-reset" onclick="restablecerDefecto()">Restablecer</button>
+        <div class="modal-acciones-der">
+          <button type="button" class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+          <button type="button" class="btn-guardar" onclick="guardarNombres()">Guardar cambios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
