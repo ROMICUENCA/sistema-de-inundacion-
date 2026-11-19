@@ -618,44 +618,10 @@ function configurarTooltips() {
 }
 
 function renderizarEstadisticas() {
-  let maxInundSeg = 0;
-  let maxInundSector = null;
-  let maxSecoSeg = 0;
-  let maxSecoSector = null;
-
-  for (let i = 1; i <= 3; i++) {
-    const seco = stats.sectores[i].secoTotal;
-    const inund = stats.sectores[i].inundadoTotal;
-    if (inund > maxInundSeg) {
-      maxInundSeg = inund;
-      maxInundSector = obtenerNombreSector(i);
-    }
-    if (seco > maxSecoSeg) {
-      maxSecoSeg = seco;
-      maxSecoSector = obtenerNombreSector(i);
-    }
-  }
-
-  if (maxInundSector && maxInundSeg > 0) {
-    document.getElementById("mayorInundadoNombre").textContent = maxInundSector;
-    document.getElementById("mayorInundadoDetalle").textContent = `${formatearTiempo(maxInundSeg)} totales en alerta`;
-  } else {
-    document.getElementById("mayorInundadoNombre").textContent = "Ninguno inundado";
-    document.getElementById("mayorInundadoDetalle").textContent = "0s acumulados";
-  }
-
-  if (maxSecoSector && maxSecoSeg > 0) {
-    document.getElementById("mayorSecoNombre").textContent = maxSecoSector;
-    document.getElementById("mayorSecoDetalle").textContent = `${formatearTiempo(maxSecoSeg)} totales en normal`;
-  } else {
-    document.getElementById("mayorSecoNombre").textContent = "Sin registro aún";
-    document.getElementById("mayorSecoDetalle").textContent = "0s acumulados";
-  }
-
   document.getElementById("resumenTiemposAgua").textContent =
-    `S1: ${formatearTiempo(stats.sectores[1].inundadoTotal)} · ` +
-    `S2: ${formatearTiempo(stats.sectores[2].inundadoTotal)} · ` +
-    `S3: ${formatearTiempo(stats.sectores[3].inundadoTotal)} inund.`;
+    `${obtenerNombreSector(1)}: ${formatearTiempo(stats.sectores[1].inundadoTotal)} inund. / ${formatearTiempo(stats.sectores[1].secoTotal)} seco · ` +
+    `${obtenerNombreSector(2)}: ${formatearTiempo(stats.sectores[2].inundadoTotal)} inund. / ${formatearTiempo(stats.sectores[2].secoTotal)} seco · ` +
+    `${obtenerNombreSector(3)}: ${formatearTiempo(stats.sectores[3].inundadoTotal)} inund. / ${formatearTiempo(stats.sectores[3].secoTotal)} seco`;
 
   const cSeco = stats.clima["SECO"];
   const cLlov = stats.clima["LLOVIZNA"];
