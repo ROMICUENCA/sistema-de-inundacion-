@@ -258,30 +258,15 @@ body {
   margin-top: 3px;
 }
 
-.resumen-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
 .kpi-box {
-  padding: 13px 15px;
+  width: 100%;
+  padding: 14px 16px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: #f8fafc;
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.kpi-box.flood {
-  background: var(--alert-bg);
-  border-color: var(--alert-border);
-}
-
-.kpi-box.dry {
-  background: var(--ok-bg);
-  border-color: var(--ok-border);
 }
 
 .kpi-label {
@@ -292,22 +277,14 @@ body {
   color: var(--text-muted);
 }
 
-.kpi-box.flood .kpi-label {
-  color: var(--alert-text);
-}
-
-.kpi-box.dry .kpi-label {
-  color: var(--ok-text);
-}
-
 .kpi-valor {
-  font-size: 1.02rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-main);
 }
 
 .kpi-sub {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
 }
 
@@ -762,7 +739,6 @@ table.agenda-table tr:last-child td {
 @media (max-width: 780px) {
   .sectores-fila,
   .modal-body,
-  .resumen-kpi-grid,
   .clima-desglose {
     grid-template-columns: 1fr;
   }
